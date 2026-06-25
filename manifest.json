@@ -1,0 +1,34 @@
+{
+    "manifest_version": 3,
+    "version": "0.1",
+    "name": "Phishing Detector",
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    },
+    "author": "Shourya Kashyap",
+    "action": {
+        "default_popup": "popup/popup.html",
+        "default_title": "Phishing Detector"
+    },
+    "permissions": [
+        "activeTab",
+        "storage",
+        "declarativeNetRequest"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content.js"],
+            "run_at": "document_idle",
+            "all_frames": true
+        }
+    ]
+}
