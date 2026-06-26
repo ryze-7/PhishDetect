@@ -1,6 +1,7 @@
 # PhishDetect
 
 A Chrome extension that detects phishing websites in real time using client-side heuristics — no ML, no external API calls, no data leaving your browser.
+PhishDetect does not collect, transmit, or store any user data outside the browser
 
 ## How it works
 
