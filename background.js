@@ -18,6 +18,20 @@ const BRAND_SAFE_DOMAINS = {
     steam: ['steampowered.com', 'steamcommunity.com']
 };
 
+let ALLOWLIST = [];
+
+fetch(chrome.runtime.getURL('data/allowlist.json'))
+    .then(res => res.json())
+    .then(data => { ALLOWLIST = data; })
+    .catch(err => console.error('Failed to load allowlist:', err));
+
+
+let BLOCKLIST = [];
+
+fetch(chrome.runtime.getURL('data/blocklist.json'))
+    .then(res => res.json())
+    .then(data => { BLOCKLIST = data; })
+    .catch(err => console.error('Failed to load blocklist:', err));
 
 function analyseURL(url) {
     let score = 0;
@@ -30,6 +44,22 @@ function analyseURL(url) {
         return { score: 0, flags: [], verdict: 'safe' };
     }
 
+    const isAllowlisted = ALLOWLIST.some(domain => 
+        parsed.hostname === domain || parsed.hostname.endsWith('.' + domain)
+    );
+
+    if (isAllowlisted) {
+        return { score: 0, flags: ['Allowlisted domain'], verdict: 'safe' };
+    }
+
+    const isBlocklisted = BLOCKLIST.some(domain =>
+        parsed.hostname === domain || parsed.hostname.endsWith('.' + domain)
+    );
+
+    if (isBlocklisted) {
+        return { score: 10, flags: ['Blocklisted domain'], verdict: 'block' };
+    }
+    
     //Checking subdomain depth
     const parts = parsed.hostname.split('.');
 
@@ -84,15 +114,35 @@ function analyseURL(url) {
 
 
 //listening events generated after visiting a tab 
-chrome.tabs.onUpdated.addListener(
-    (tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status !== 'complete' || !tab.url) return;
+    if (!tab.url.startsWith('http')) return;
 
-        //page must complete loading and tab must have valid url
-        if (changeInfo.status != 'complete' || !tab.url) return;
+    // Clear previous result for this tab first
+    chrome.storage.local.remove(tabId.toString());
 
-        const result = analyseURL(tab.url);
-        console.log(result);
+    const result = analyseURL(tab.url);
+    chrome.storage.local.set({ [tabId]: result });
+    console.log(`[PhishDetect] ${tab.url}`);
+    console.log(`Score: ${result.score} | Verdict: ${result.verdict}`);
+});
 
-        chrome.storage.local.set({ [tabId]: result });
-    }
-)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type !== 'DOM_FLAGS') return;
+    if (!message.flags.length) return;
+
+    const tabId = sender.tab.id;
+
+    chrome.storage.local.get(tabId.toString(), (data) => {
+        const existing = data[tabId.toString()];
+        if (!existing) return;
+
+        existing.flags.push(...message.flags);
+        existing.score += message.flags.length * 3;
+
+        if (existing.score >= 8) existing.verdict = 'block';
+        else if (existing.score >= 4) existing.verdict = 'warn';
+
+        chrome.storage.local.set({ [tabId]: existing });
+    });
+});
