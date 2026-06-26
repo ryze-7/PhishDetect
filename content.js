@@ -20,7 +20,7 @@
                 domFlags.push(`Form submits to different domain: ${actionDomain}`);
             }
         } catch {
-            // invalid action URL, skip
+            // invalid action url
         }
     });
 

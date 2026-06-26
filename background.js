@@ -1,10 +1,10 @@
-// Suspicious TLDs commonly abused in phishing
+// suspicious tld commonly abused in phishing
 const SUSPICIOUS_TLDS = ['.top', '.xyz', '.cc', '.click', '.tk', '.ml', '.ga', '.cf', '.gq', '.zip', '.mov'];
 
-// Target brands & Brand safe domains
+// target brands and brand safe domains
 const TARGET_BRANDS = ['paypal', 'netflix', 'google', 'microsoft', 'amazon', 'apple', 'facebook', 'instagram', 'discord', 'steam'];
 
-//currently limited to top 10 Brands, later is just data entry part
+//currently limited to top 10 Brands
 const BRAND_SAFE_DOMAINS = {
     paypal: ['paypal.com', 'paypal.co.uk'],
     netflix: ['netflix.com'],
